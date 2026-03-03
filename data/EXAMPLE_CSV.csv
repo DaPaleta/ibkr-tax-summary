@@ -1,0 +1,15 @@
+Statement,Header,Field Name,Field Value
+Statement,Data,Title,Activity Statement
+Statement,Data,Period,"January 1, 2024 - December 31, 2024"
+Statement,Data,WhenGenerated,"2026-02-02, 04:30:10 EST"
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Exchange,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,Realized P/L %,MTM P/L,Code
+Trades,Data,Order,Stocks,USD,QQQ,"2024-07-23, 10:26:17",-,-40,128.79,129.37,5151.6,-2,-3698.32,1451.28,39.241601592,-23.2,C
+Trades,Data,Trade,Stocks,USD,QQQ,"2024-07-23, 10:26:17",ISLAND,-40,128.79,129.37,5151.6,-2,-3698.32,1451.28,39.24,-23.2,C
+Trades,Data,ClosedLot,Stocks,USD,QQQ,2024-02-07,,40,92.458,,,,3698.32,1451.28,0.00,,ST
+Trades,SubTotal,,Stocks,USD,QQQ,,,-40,,,5151.6,-2,-3698.32,1451.28,39.24,-23.2,
+Trades,Data,Order,Stocks,USD,SPY,"2024-06-05, 09:35:21",-,-5,250.65,251.52,1253.25,-2,-897.1,354.15,39.477204325,-4.35,C
+Trades,Data,Trade,Stocks,USD,SPY,"2024-06-05, 09:35:21",ISLAND,-5,250.65,251.52,1253.25,-2,-897.1,354.15,39.48,-4.35,C
+Trades,Data,ClosedLot,Stocks,USD,SPY,2024-02-07,,5,179.42,,,,897.1,354.15,0.00,,ST
+Trades,SubTotal,,Stocks,USD,SPY,,,-5,,,1253.25,-2,-897.1,354.15,39.48,-4.35,
+Trades,Total,,Stocks,USD,,,,,,,6404.85,-4,-4595.42,1805.43,,-27.55, 
+Trades,Total,,Stocks,ILS,,,,,,,23626.795725,-14.758,-16952.00087,6660.036855,,-101.626875, 
