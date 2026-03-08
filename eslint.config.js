@@ -10,7 +10,11 @@ export default [
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
-      globals: { console: "readonly", process: "readonly" },
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        URLSearchParams: "readonly",
+      },
     },
     plugins: { prettier },
     rules: {

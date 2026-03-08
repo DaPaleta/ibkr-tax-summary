@@ -2,27 +2,124 @@ import fs from "node:fs"
 import axios from "axios"
 import { parse } from "csv-parse/sync"
 import { stringify } from "csv-stringify/sync"
+import { CSV_NAME, FALLBACK_RATE, BOI_EXR_BASE } from "./config.js"
 
-const CSV_NAME = "EXAMPLE_CSV.csv"
-const FALLBACK_RATE = 3.5
+/**
+ * Fetch USD/ILS rates from Bank of Israel (BOI) as a time series.
+ * Returns { [date: string]: rate } for dates in [startPeriod, endPeriod].
+ * CSV format: "Time Period", "RER_USD_ILS:..." with rows "YYYY-MM-DD", "3.66"
+ */
+async function fetchBoiRatesForRange(startPeriod, endPeriod) {
+  const params = new URLSearchParams()
+  params.set("c[SERIES_CODE]", "RER_USD_ILS")
+  params.set("format", "csv-series")
+  params.set("startperiod", startPeriod)
+  params.set("endperiod", endPeriod)
+  const url = `${BOI_EXR_BASE}?${params.toString()}`
+  const response = await axios.get(url, { timeout: 15_000 })
+  const records = parse(response.data, {
+    columns: true,
+    skip_empty_lines: true,
+    relax_column_count: true,
+  })
+  const byDate = {}
+  const dateKey = "Time Period"
+  for (const row of records) {
+    const date = row[dateKey]?.trim()
+    const value = row[Object.keys(row).find((k) => k !== dateKey)]?.trim()
+    if (date && value) {
+      const rate = Number(value)
+      if (Number.isFinite(rate)) byDate[date] = rate
+    }
+  }
+  return byDate
+}
+
+/**
+ * Closest date on or before `requested` from sorted list of available dates.
+ */
+function closestPriorDate(requested, sortedAvailable) {
+  const idx = sortedAvailable.findIndex((d) => d > requested)
+  if (idx === 0) return null
+  if (idx === -1) return sortedAvailable.at(-1) ?? null
+  return sortedAvailable[idx - 1]
+}
+
+/**
+ * Save BOI rates to output folder as CSV: Date,USD/ILS.
+ */
+function saveBoiRatesToOutput(byDate, startPeriod, endPeriod) {
+  const outDir = "output"
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
+  const filename = `${outDir}/boi_rates_${startPeriod}_${endPeriod}.csv`
+  const sortedDates = Object.keys(byDate).sort((a, b) => a.localeCompare(b))
+  const rows = [["Date", "USD/ILS"], ...sortedDates.map((d) => [d, byDate[d]])]
+  fs.writeFileSync(filename, stringify(rows))
+  console.log(`   BOI rates saved to ${filename}.`)
+}
 
 async function fetchExchangeRates(trades) {
   const uniqueDates = [
     ...new Set(trades.flatMap((t) => [t.buyDate, t.sellDate])),
   ]
+  const validDates = uniqueDates.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+  if (validDates.length === 0) return {}
+
+  const sortedDates = [...validDates].sort((a, b) => a.localeCompare(b))
+  const min = sortedDates[0]
+  const max = sortedDates[sortedDates.length - 1]
   const rates = {}
 
   console.log(
     `🌐 Fetching exchange rates for ${uniqueDates.length} unique dates...`
   )
-  for (const date of uniqueDates) {
-    rates[date] = await fetchExchangeRate(date)
+
+  // 1) Try Bank of Israel (BOI) time series first
+  try {
+    const byDate = await fetchBoiRatesForRange(min, max)
+    const availableDates = Object.keys(byDate).sort((a, b) =>
+      a.localeCompare(b)
+    )
+
+    for (const d of uniqueDates) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        rates[d] = FALLBACK_RATE
+        continue
+      }
+      let rate = byDate[d]
+      if (rate == null) {
+        const prior = closestPriorDate(d, availableDates)
+        rate = prior != null ? byDate[prior] : FALLBACK_RATE
+        if (prior != null) {
+          console.error(
+            `No BOI rate for ${d} (weekend/holiday), using closest prior ${prior}.`
+          )
+        } else {
+          console.error(
+            `No BOI rate for ${d}, using fallback ${FALLBACK_RATE}.`
+          )
+        }
+      }
+      rates[d] = rate
+    }
+
+    saveBoiRatesToOutput(byDate, min, max)
+    console.log("   Using Bank of Israel (BOI) rates.")
+    return rates
+  } catch (error) {
+    console.error(
+      `   BOI unavailable (${error.response?.status ?? error.message}), falling back to Frankfurter.`
+    )
   }
 
+  // 2) Fallback: Frankfurter (per-date)
+  for (const date of uniqueDates) {
+    rates[date] = await fetchFrankfurterRate(date)
+  }
   return rates
 }
 
-async function fetchExchangeRate(date) {
+async function fetchFrankfurterRate(date) {
   try {
     const response = await axios.get(
       `https://api.frankfurter.dev/v1/${date}?base=USD&symbols=ILS`
