@@ -5,19 +5,22 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "index.js",
+  "main": "src/parse-ibkr-trades.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node src/parse-ibkr-trades.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "upload-sheets": "node src/upload-to-google-sheets.js"
   },
   "dependencies": {
     "axios": "^1.13.6",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.5.2",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "googleapis": "^144.0.0",
+    "open": "^10.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",

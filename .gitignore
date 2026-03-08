@@ -1,1 +1,5 @@
 /node_modules/
+**secret**
+.credentials/
+token.json
+client_secret*.json

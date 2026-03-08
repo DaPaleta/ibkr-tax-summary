@@ -21,7 +21,6 @@ A Node.js script that turns Interactive Brokers (IBKR) activity statement CSVs i
 
 ### Output columns (in order)
 
-
 | #   | Column            | Source                                   |
 | --- | ----------------- | ---------------------------------------- |
 | 1   | Symbol            | Order row                                |
@@ -35,9 +34,7 @@ A Node.js script that turns Interactive Brokers (IBKR) activity statement CSVs i
 | 9   | USD/ILS Rate Sell | Fetched for sell date                    |
 | 10  | Fee               | Comm/Fee from **Trade** row              |
 
-
 ### Derived columns (extended by the script)
-
 
 | Column               | Formula                                                   |
 | -------------------- | --------------------------------------------------------- |
@@ -46,7 +43,6 @@ A Node.js script that turns Interactive Brokers (IBKR) activity statement CSVs i
 | **Gains after fees** | (6)×(7)×(9) − (10)×(9) — proceeds in ILS minus fee in ILS |
 | **Optimized P/L**    | See below                                                 |
 | **Status**           | `Profit` or `Loss`                                        |
-
 
 **Optimized P/L** (tax-friendly realized P/L in ILS):
 
@@ -106,9 +102,9 @@ npm install
 
 ### Configuration
 
-- **Input file:** Edit `CSV_NAME` in `index.js` so the script will pick it up from `data/CSV_NAME`.
+- **Input file:** Edit `CSV_NAME` in `src/config.js` so the script will pick it up from `data/CSV_NAME`.
 - **Output file:** The script writes `CSV_NAME` in the output folder.
-- **Exchange rates:** The script uses the [Frankfurter API](https://www.frankfurter.dev/) (no API key). If a date fails, it falls back to a default rate (see `FALLBACK_RATE` in `index.js`).
+- **Exchange rates:** The script uses the [Frankfurter API](https://www.frankfurter.dev/) (no API key). If a date fails, it falls back to a default rate (see `FALLBACK_RATE` in `src/config.js`).
 
 ### Run
 
@@ -119,7 +115,7 @@ npm start
 Or:
 
 ```bash
-node index.js
+node src/parse-ibkr-trades.js
 ```
 
 You should see something like:
@@ -132,12 +128,55 @@ You should see something like:
 
 ---
 
+## Upload to Google Sheets
+
+The script **copies** your template spreadsheet (via the Drive API), then fills the copy with trade data: row 3 is duplicated for each trade (keeping formulas in C, D, H, etc.) and columns A, B, E, F, G, I, J, M are filled. Trades are sorted by Sell Date ascending. The original spreadsheet is never modified.
+
+### Setup
+
+1. **Google Cloud:** In [Google Cloud Console](https://console.cloud.google.com/), create a project, enable **Google Sheets API** and **Google Drive API**, and configure the **OAuth consent screen** (e.g. External for personal use). Add scopes for Sheets and Drive.
+2. **OAuth client:** Create **OAuth 2.0** credentials — use **Web application** and add authorized redirect URI `http://localhost:3232`. Download the client secret JSON (or use **Desktop app** and add the same redirect URI if your console allows).
+3. **Credentials:** Put the client secret file in the project root as `client_secret_*.json`, or set `OAUTH_CREDENTIALS_PATH` to its path.
+4. **Template spreadsheet:** Use a Google Sheet you can open (your template). Set `SPREADSHEET_ID` to its ID, or use the script default. You need at least view access; the script will duplicate it and fill the copy.
+
+On first run, the script opens a browser so you can sign in with Google and authorize the app. **Sign in with the same Google account that has access to the template spreadsheet** (owner or shared with). Tokens are stored locally (e.g. `.credentials/token.json`) for future runs. If you get "Permission denied", delete the token file and run again, then sign in with the account that can open the spreadsheet. If the error says the **Drive API** is disabled, enable it in [APIs & Services](https://console.cloud.google.com/apis/library/drive.googleapis.com) for the same project that owns your OAuth client.
+
+**Optional env:**
+
+- `SPREADSHEET_ID` — template spreadsheet ID (the script copies this).
+- `SHEET_GID` — sheet/tab gid in the template (default `2018551420`).
+- `OUTPUT_CSV` — path to the output CSV if you don’t pass it as an argument.
+- `COPY_DESTINATION_FOLDER_ID` — Drive folder ID where the copy should be created (optional).
+- `COPY_NAME` — name for the new copy (default: `IBKR Tax Summary YYYY-MM-DD`).
+- `GOOGLE_TOKEN_PATH` — where to store the OAuth token (default: `.credentials/token.json`).
+
+### Run
+
+```bash
+npm run upload-sheets
+```
+
+Or with a specific CSV:
+
+```bash
+node src/upload-to-google-sheets.js output/your-file.csv
+```
+
+The script copies the template sheet, then writes the sorted trade data into the copy and prints the new spreadsheet URL.
+
+---
+
 ## Project structure
 
 ```
 ├── data/                    # Put your IBKR Activity Statement CSV here
 ├── output/                  # Get your transformed CSV here
-├── index.js                 # Main script
+├── src/
+│   ├── config.js            # Configuration constants
+│   ├── parse-ibkr-trades.js # Main parser script
+│   ├── upload-to-google-sheets.js
+│   └── utils/
+│       └── google-auth-helper.js  # Google OAuth utilities
 ├── package.json
 └── README.md
 ```
