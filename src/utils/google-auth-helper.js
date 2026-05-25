@@ -120,7 +120,21 @@ export async function getOAuth2Client() {
   const saved = loadSavedToken(tokenPath)
   if (saved) {
     oauth2Client.setCredentials(saved)
-    return { oauth2Client, tokenPath }
+    try {
+      await oauth2Client.getAccessToken()
+      return { oauth2Client, tokenPath }
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || ""
+      if (String(msg).includes("invalid_grant")) {
+        console.log(
+          "Saved token is no longer valid (invalid_grant). Re-authenticating..."
+        )
+        fs.rmSync(tokenPath, { force: true })
+        oauth2Client.setCredentials({})
+      } else {
+        throw e
+      }
+    }
   }
 
   const tokens = await runLoopbackAuth(oauth2Client)
