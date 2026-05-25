@@ -170,8 +170,8 @@ function parseTradesCsv() {
       currentTrade.sellPrice = Math.abs(Number(tPrice))
       currentTrade.sellQty = Math.abs(Number(quantity))
       currentTrade.fee = Math.abs(Number(commFee))
-    } else if (discriminator === "ClosedLot" && currentTrade) {
-      currentTrade.buyDate = dateTime.trim()
+    } else if (discriminator.startsWith("ClosedLot") && currentTrade) {
+      currentTrade.buyDate = dateTime.split(",")[0].trim()
       currentTrade.buyPrice = Number(tPrice)
     } else if (discriminator === "" && currentTrade) {
       if (currentTrade.buyDate && currentTrade.sellDate) {

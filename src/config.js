@@ -1,4 +1,4 @@
-export const CSV_NAME = "EXAMPLE_CSV.csv"
+export const CSV_NAME = "U10659467_20250101_20251231.csv"
 export const FALLBACK_RATE = 3.5
 export const BOI_EXR_BASE =
   "https://edge.boi.gov.il/FusionEdgeServer/sdmx/v2/data/dataflow/BOI.STATISTICS/EXR/1.0/"
