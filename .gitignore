@@ -3,3 +3,12 @@
 .credentials/
 token.json
 client_secret*.json
+
+# macOS junk
+.DS_Store
+
+# Personal data — ignore everything in data/ and output/ except the EXAMPLE files
+data/*
+!data/EXAMPLE_CSV.csv
+output/*
+!output/EXAMPLE_CSV.csv

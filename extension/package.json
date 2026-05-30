@@ -1,0 +1,21 @@
+{
+  "name": "tax-form-assistant-extension",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "copy-pdf-worker": "node -e \"require('fs').copyFileSync(require.resolve('pdfjs-dist/build/pdf.worker.min.mjs'), 'public/vendor/pdf.worker.min.mjs')\"",
+    "dev": "npm run copy-pdf-worker && vite",
+    "build": "rm -rf dist && npm run copy-pdf-worker && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^4.7.76"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@types/chrome": "^0.0.270",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.8"
+  }
+}

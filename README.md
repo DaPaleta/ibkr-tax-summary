@@ -1,5 +1,62 @@
 # IBKR Tax Summary
 
+A toolkit for preparing the Israeli annual income tax filing. Two surfaces today:
+
+1. **Node CLI** (this section onwards) — turns IBKR activity statement CSVs into an ILS-based summary, and parses a T106 PDF to fill a local copy of Form 1301.
+2. **Chrome extension** (`extension/`) — draggable in-page panel that fills the **live** Form 1301 page from a T106 PDF, with manual override per field. See [`extension/README.md`](extension/README.md) for the full spec.
+
+See [`docs/vision.md`](docs/vision.md) for the broader goal and [`docs/structure.md`](docs/structure.md) for the repo map.
+
+---
+
+## Chrome extension — quick start
+
+The extension lives in [`extension/`](extension/) and is an MV3 Chrome extension built with Vite + `@crxjs/vite-plugin` + TypeScript.
+
+### Develop
+
+```bash
+cd extension
+npm install           # also copies the pdfjs worker into public/vendor/
+npm run build         # writes extension/dist/
+# or
+npm run dev           # Vite dev with HMR for the panel
+```
+
+`dev` and `build` copy the pdfjs worker into `public/vendor/` before invoking Vite.
+
+### Load into Chrome
+
+1. Visit `chrome://extensions` and toggle **Developer mode**.
+2. Click **Load unpacked** and pick `extension/dist`.
+3. To use the extension on a `file://` URL (e.g. a local saved copy of `form1301.html`): on the extension's card, click **Details** → enable **Allow access to file URLs**. Chrome cannot grant this from the manifest; the user has to toggle it manually.
+
+### Use
+
+1. Open the Form 1301 page (or a local saved copy).
+2. Click the extension's toolbar icon — the floating panel appears on the right.
+3. Drag the header to move it anywhere. Position persists across reloads.
+4. Upload a T106 PDF (it's parsed entirely in the browser via `pdfjs-dist`) **or** type values directly into the editable field table.
+5. Optionally add external donations (added to `txt037`).
+6. Click **Fill form**. The panel reports per-field success and any missing inputs.
+
+If the current page has no Form 1301 inputs, the panel shows a yellow banner explaining why **Fill form** won't do anything. PDF parse failures (corrupt file, unrecognised format) surface as red/yellow banners with a manual-entry fallback.
+
+### Shared code
+
+Both the CLI and the extension share the T106 parser in [`lib/t106/`](lib/t106/):
+
+- `extract.js` — pure: `decodeT106Text(raw)` + `extractT106Fields(decodedText)`.
+- `parse-node.js` — Node adapter (`pdf-parse` + `fs`), used by the CLI.
+- `parse-browser.js` — Browser adapter (`pdfjs-dist`), used by the extension.
+- `mapping.js` — T106 field number → Form 1301 input ID.
+
+This lets us A/B-check the browser parser against the Node one on the same T106 PDF.
+
+---
+
+## Node CLI
+
 A Node.js script that turns Interactive Brokers (IBKR) activity statement CSVs into a single, ILS-based summary CSV suitable for **Israeli tax reporting**. It parses trade blocks, fetches USD→ILS exchange rates for the relevant dates, and computes cost basis, gains, and an optimized realized P/L in shekels.
 
 ## What it does
