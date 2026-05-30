@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Israeli Tax Form Assistant",
+  "description": "Helper for filling Form 1301 from a T106 PDF.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "Toggle Tax Assistant panel"
+  },
+  "background": {
+    "service_worker": "src/background/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.ts"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "host_permissions": ["<all_urls>"],
+  "permissions": ["storage", "activeTab"],
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/*", "src/content/panel.css", "content-main.js", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

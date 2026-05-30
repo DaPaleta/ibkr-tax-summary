@@ -22,20 +22,9 @@
 import { load } from "cheerio"
 import { readFile, writeFile } from "fs/promises"
 import { parseArgs } from "util"
-import { parseT106, T106_FIELDS } from "./parse-t106.js"
-
-// Maps T106 field numbers to their corresponding HTML input IDs.
-// txt037 is a combined field: T106[037] + external donations.
-const T106_TO_HTML = {
-  158: "txt158", // משכורת (gross salary)
-  244: "txt244", // שכר מבוטח ששילם המעסיק (insured salary for pension)
-  218: "txt218", // ברוטו לקרן השתלמות (study fund gross salary)
-  42: "txt042", // מס הכנסה (income tax withheld)
-  45: "txt045", // קופת גמל לקצבה - עמית שכיר (employee pension contribution)
-  248: "txt248", // הפקדות המעסיק לקצבה (employer pension contributions)
-  11: "txt011", // הפחתת דמי הבראה (recuperation pay reduction)
-  // Field 37 (donations) is handled separately below — it combines T106 + external amount
-}
+import { parseT106 } from "../lib/t106/parse-node.js"
+import { T106_FIELDS } from "../lib/t106/extract.js"
+import { T106_TO_HTML, DONATIONS_HTML_ID } from "../lib/t106/mapping.js"
 
 function parseCliArgs() {
   const { values } = parseArgs({
@@ -114,7 +103,7 @@ async function main() {
   // 4. Donations: T106[037] + external amount
   const donationsTotal = (fields[37] || 0) + externalDonations
   if (donationsTotal > 0) {
-    fillField($, "txt037", donationsTotal)
+    fillField($, DONATIONS_HTML_ID, donationsTotal)
   }
 
   // 5. Save
