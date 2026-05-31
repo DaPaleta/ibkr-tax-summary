@@ -5,7 +5,6 @@
  */
 import * as pdfjs from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
-// @ts-expect-error — JS module, imported as JS via tsconfig allowJs.
 import { decodeT106Text, extractT106Fields } from '../../../lib/t106/extract.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('vendor/pdf.worker.min.mjs');

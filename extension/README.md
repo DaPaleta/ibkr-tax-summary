@@ -1,6 +1,6 @@
 # Tax Form Assistant — Chrome MV3 extension
 
-Draggable in-page panel that fills Form 1301 from a T106 PDF.
+Draggable in-page panel that fills Form 1301 from **T106** salary certificates and **Form 867** broker certificates. Upload multiple files, review a combined summary (including the §92 securities loss-offset proposal), edit any value, then fill the form.
 
 ## Develop
 
@@ -25,9 +25,14 @@ npm run build        # produces dist/
 1. Open the Form 1301 page (or a local saved copy on `file://`).
 2. Click the extension's toolbar icon — the panel appears on the right.
 3. Drag the header to move it. Position persists across reloads.
-4. Upload a T106 PDF or fill values manually in the field table.
-5. Add external donations (optional — they're added into `txt037`).
-6. Click **Fill form**. The panel reports per-field success or missing IDs.
+4. **Upload one or more PDFs** — T106 salary certificates and/or Form 867 broker certificates. Each file's type is auto-detected and added to the list (remove with ×). Pass **single-broker** 867s (not a combined/merged PDF).
+5. Optionally enter **external donations** (added into `txt037`) and **prior-year carry-forward losses**.
+6. Review the **securities summary** — the §92 loss-offset proposal (net gain, net interest/dividend, carry-forward) computed from all 867s per Tax Authority circular 10/2025. The offset order is your choice; **edit any value** in the fill table before filling.
+7. Click **Fill form**. Fields not on the current page (e.g. the נספח ג / Appendix C tab) are reported as missing — switch tabs and fill again.
+
+### How it parses 867s in the browser
+
+`pdf-parse`'s `getTable()` (the Node path) isn't available in-page, so the browser adapter (`parse-867.ts`) gets positioned text items from `pdfjs` and rebuilds the rate-column grid with the shared pure `lib/867/layout.js`. `test/867-browser-parity.test.mjs` proves this matches the Node `getTable` output for both broker layouts.
 
 ## Permissions today
 

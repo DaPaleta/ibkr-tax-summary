@@ -55,6 +55,32 @@ This lets us A/B-check the browser parser against the Node one on the same T106 
 
 ---
 
+## Parse a Form 867 (broker tax certificate)
+
+`src/parse-867.js` extracts the fields needed for **Form 1301 Appendix C (נספח ג)** — capital gains, dividends, and interest on securities — from a **single** broker's Form 867 PDF. It only extracts the raw 867 values; the loss-offset waterfall and form filling are later steps (see [`867_to_1301_mapping.md`](867_to_1301_mapping.md)).
+
+```bash
+node src/parse-867.js ./data/867_2024_ibi.pdf          # human-readable summary
+node src/parse-867.js ./data/Psagot-867-2025.pdf --json # machine-readable JSON
+```
+
+Two extraction paths are chosen automatically per broker PDF (both validated against real samples):
+
+- **Ruled-grid brokers** (e.g. IBI): `pdf-parse` `getTable()` reconstructs the rate-column grid. Their plain text drops empty cells, so columns would otherwise be lost.
+- **No-grid brokers** (e.g. Psagot): `getTable()` finds no tables, but the text layer emits `0.00` per empty cell, keeping each row column-aligned. The adapter falls back to text-line parsing.
+
+The shared, environment-agnostic logic lives in [`lib/867/`](lib/867/):
+
+- `extract.js` — pure: `extract867Fields({ pages, text })` over a normalized `{ cells, raw }` row model. Tax-rate columns are read dynamically from each table header (orderings differ per table), never hardcoded. Losses are normalized to a positive magnitude.
+- `parse-node.js` — Node adapter (`pdf-parse` `getTable()` + `getText()`).
+- `mapping.js` — 867 fields → Appendix C / 1301 field codes.
+
+> **Single 867 only.** Pass one broker's certificate. A combined/merged multi-broker PDF (like `data/867_2025_combined.pdf`, whose IBI pages were scanned to images) may have no text layer and is out of scope. Run tests with `npm test`.
+
+The same `lib/867/` logic powers the **Chrome extension**, which adds a browser PDF adapter (`lib/867/layout.js`), the §92 loss-offset waterfall (`lib/867/waterfall.js`), and combines multiple T106/867 uploads into a reviewable pre-fill summary — see [`extension/README.md`](extension/README.md).
+
+---
+
 ## Node CLI
 
 A Node.js script that turns Interactive Brokers (IBKR) activity statement CSVs into a single, ILS-based summary CSV suitable for **Israeli tax reporting**. It parses trade blocks, fetches USD→ILS exchange rates for the relevant dates, and computes cost basis, gains, and an optimized realized P/L in shekels.
