@@ -12,6 +12,9 @@ export function makeDraggable(panel: HTMLElement, handle: HTMLElement, key: stri
 
   const onMouseDown = (e: MouseEvent) => {
     if (e.button !== 0) return;
+    // Don't start a drag when grabbing a control in the handle (e.g. the close button) —
+    // moving the panel mid-press cancels that control's click.
+    if ((e.target as HTMLElement).closest('button, input, a, select, textarea')) return;
     dragging = true;
     startX = e.clientX;
     startY = e.clientY;
